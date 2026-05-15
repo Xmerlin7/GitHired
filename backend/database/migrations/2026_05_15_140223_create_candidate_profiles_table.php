@@ -15,18 +15,22 @@ return new class extends Migration
             $table->id();
 
             $table->foreignId('user_id')
+                ->unique()
                 ->constrained()
                 ->onDelete('cascade');
 
             $table->string('resume_url')->nullable();
 
             $table->string('portfolio_link')->nullable();
+            $table->string('phone_number', 20)->nullable();
 
             $table->integer('years_experience')->default(0);
-
-            $table->string('phone_number')->nullable();
+            $table->json('skills')->nullable();
 
             $table->timestamps();
+
+            $table->index('years_experience');
+            
         });
     }
 
