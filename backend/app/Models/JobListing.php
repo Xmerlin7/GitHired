@@ -27,7 +27,7 @@ class JobListing extends Model
     ];
 
     /**
-     * الوظيفة تنتمي لصاحب عمل (بروفايل الشركة)
+     * Job BelongsTo EmployerProfile
      */
     public function employer(): BelongsTo
     {
@@ -35,7 +35,7 @@ class JobListing extends Model
     }
 
     /**
-     * الوظيفة تنتمي لقسم معين
+     * Job BelongsTo Category
      */
     public function category(): BelongsTo
     {
@@ -43,7 +43,7 @@ class JobListing extends Model
     }
 
     /**
-     * الوظيفة الواحدة لها العديد من طلبات التوظيف
+     * Job hasMany Applications
      */
     public function applications(): HasMany
     {

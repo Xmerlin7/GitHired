@@ -10,8 +10,12 @@ class JobListingService
     public function getAllJobs(array $filters = []): LengthAwarePaginator
     {
         $query = JobListing::with(['employer', 'category'])
-            ->where('status', 'published')
+            ->where('status', 'approved')
             ->latest();
+
+        if (! empty($filters['category_id'])) {
+            $query->where('category_id', $filters['category_id']);
+        }
 
         // Work Type Filter
         if (isset($filters['work_type'])) {
@@ -23,20 +27,20 @@ class JobListingService
             $query->where('category_id', $filters['category_id']);
         }
 
-        // ✅ Search Filter
+        // Search Filter
         if (isset($filters['search'])) {
             $query->where(function ($q) use ($filters) {
                 $q->where('title', 'like', "%{$filters['search']}%")
-                  ->orWhere('description', 'like', "%{$filters['search']}%");
+                    ->orWhere('description', 'like', "%{$filters['search']}%");
             });
         }
 
-        // ✅ Experience Filter
+        // Experience Filter
         if (isset($filters['experience'])) {
             $query->where('experience', $filters['experience']);
         }
 
-        // ✅ Salary Range Filter
+        // Salary Range Filter
         if (isset($filters['salary_min'])) {
             $query->where('salary_max', '>=', $filters['salary_min']);
         }
@@ -45,18 +49,21 @@ class JobListingService
             $query->where('salary_min', '<=', $filters['salary_max']);
         }
 
-        // ✅ Location Filter ()
+        //  Location Filter ()
         // if (isset($filters['location'])) {
         //     $query->where('location', 'like', "%{$filters['location']}%");
         // }
 
-        // ✅ Employer Filter
+        // Employer Filter
         if (isset($filters['employer_id'])) {
             $query->where('employer_id', $filters['employer_id']);
         }
 
-        // ✅ Pagination with custom per_page
+        // Pagination with custom per_page
         $perPage = $filters['per_page'] ?? 10;
+        if ($perPage > 100) {
+            $perPage = 100;
+        }
 
         return $query->paginate($perPage);
     }
@@ -64,26 +71,39 @@ class JobListingService
     public function getJobById(int $id): JobListing
     {
         return JobListing::with(['employer', 'category'])
-            ->where('status', 'published')
+            ->where('status', 'approved')
             ->findOrFail($id);
     }
 
-    // ✅ إضافة CRUD Methods
-    public function createJob(array $data): JobListing
+    // CRUD Methods
+    public function createJob(array $data, int $employerId): JobListing
     {
-        return JobListing::create($data);
+        return JobListing::create(array_merge($data, [
+            'employer_id' => $employerId,
+            'status' => 'pending',
+        ]));
     }
 
     public function updateJob(int $id, array $data): JobListing
     {
         $job = JobListing::findOrFail($id);
         $job->update($data);
+
         return $job->fresh(['employer', 'category']);
     }
 
     public function deleteJob(int $id): bool
     {
         $job = JobListing::findOrFail($id);
+
         return $job->delete();
+    }
+
+    public function updateJobStatus(int $id, string $status): JobListing
+    {
+        $job = JobListing::findOrFail($id);
+        $job->update(['status' => $status]);
+
+        return $job->fresh(['employer', 'category']);
     }
 }

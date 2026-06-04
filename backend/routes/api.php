@@ -3,7 +3,8 @@
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\JobListingController;
 use App\Http\Controllers\Api\AuthController;
-
+use App\Http\Controllers\Api\JobApplicationController;
+use App\Http\Controllers\Api\ProfileController;
 
 Route::post('/register', [AuthController::class, 'register']);
 Route::post('/login', [AuthController::class, 'login']);
@@ -26,5 +27,17 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::middleware('role:candidate')->group(function () {
         // Route::post('/jobs/{id}/apply', [ApplicationController::class, 'store']);
     });
+
+    Route::post('/jobs/{jobId}/apply', [JobApplicationController::class, 'store'])
+         ->middleware('role:candidate');
+
+    Route::put('/applications/{id}/status', [JobApplicationController::class, 'updateStatus'])
+         ->middleware('role:employer,admin');
+
+    Route::get('/applications', [JobApplicationController::class, 'index'])
+         ->middleware('role:candidate,employer,admin');
+
+    Route::get('/profile', [ProfileController::class, 'show']);
+    Route::put('/profile', [ProfileController::class, 'update']);
 
 });

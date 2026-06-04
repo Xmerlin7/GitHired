@@ -14,7 +14,7 @@ class JobListingController extends Controller
     ) {}
 
     /**
-     * GET /api/jobs
+     * GET /api/jobs (مفتوح للكل مع الفلاتر)
      */
     public function index(Request $request): JsonResponse
     {
@@ -33,15 +33,28 @@ class JobListingController extends Controller
     }
 
     /**
-     * POST /api/jobs
+     * POST /api/jobs (Employers Only)
      */
     public function store(Request $request): JsonResponse
     {
-        // TODO: Add validation
-        $job = $this->jobService->createJob($request->all());
+        // تقفيل الـ Validation بناءً على الـ ERD والـ Requirements
+        $validated = $request->validate([
+            'category_id' => 'required|exists:categories,id',
+            'title'       => 'required|string|max:255',
+            'description' => 'required|string',
+            'experience'  => 'required|string',
+            'salary_min'  => 'nullable|integer',
+            'salary_max'  => 'nullable|integer',
+            'work_type'   => 'required|string', // مثلاً: remote, on-site, hybrid
+            'deadline'    => 'required|date|after:today',
+        ]);
+
+        // تصليح الباصينج: بنباصي البيانات المفلترة + الـ ID بتاع اليوزر اللي عامل Login
+        $job = $this->jobService->createJob($validated, $request->user()->id);
 
         return response()->json([
             'success' => true,
+            'message' => 'تم إضافة الوظيفة بنجاح، بانتظار موافقة الإدارة.',
             'data' => $job
         ], 201);
     }
@@ -51,7 +64,7 @@ class JobListingController extends Controller
      */
     public function show(string $id): JsonResponse
     {
-        $job = $this->jobService->getJobById($id);
+        $job = $this->jobService->getJobById((int)$id);
 
         return response()->json([
             'success' => true,
@@ -60,15 +73,26 @@ class JobListingController extends Controller
     }
 
     /**
-     * PUT/PATCH /api/jobs/{id}
+     * PUT /api/jobs/{id} (Employers Only)
      */
     public function update(Request $request, string $id): JsonResponse
     {
-        // TODO: Add validation
-        $job = $this->jobService->updateJob($id, $request->all());
+        $validated = $request->validate([
+            'category_id' => 'nullable|exists:categories,id',
+            'title'       => 'nullable|string|max:255',
+            'description' => 'nullable|string',
+            'experience'  => 'nullable|string',
+            'salary_min'  => 'nullable|integer',
+            'salary_max'  => 'nullable|integer',
+            'work_type'   => 'nullable|string',
+            'deadline'    => 'nullable|date|after:today',
+        ]);
+
+        $job = $this->jobService->updateJob((int)$id, $validated);
 
         return response()->json([
             'success' => true,
+            'message' => 'تم تحديث بيانات الوظيفة بنجاح.',
             'data' => $job
         ]);
     }
@@ -78,11 +102,30 @@ class JobListingController extends Controller
      */
     public function destroy(string $id): JsonResponse
     {
-        $this->jobService->deleteJob($id);
+        $this->jobService->deleteJob((int)$id);
 
         return response()->json([
             'success' => true,
             'message' => 'Job deleted successfully'
+        ]);
+    }
+
+    /**
+     * خاص بالـ Admin: الموافقة أو الرفض
+     */
+    public function changeStatus(Request $request, string $id): JsonResponse
+    {
+        $validated = $request->validate([
+            'status' => 'required|in:approved,rejected',
+        ]);
+
+        // هنضيف دالة الـ updateJobStatus دي في السيرفيس حالا تحت
+        $job = $this->jobService->updateJobStatus((int)$id, $validated['status']);
+
+        return response()->json([
+            'success' => true,
+            'message' => "تم تغيير حالة الوظيفة إلى {$validated['status']}",
+            'data' => $job
         ]);
     }
 }
