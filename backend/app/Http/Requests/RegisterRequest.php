@@ -68,7 +68,7 @@ class RegisterRequest extends FormRequest
 
             'company_name' => [
                 'exclude_if:role,candidate',
-                'required_if:role,employer',
+                'nullable',
                 'string',
                 'max:50',
             ],
@@ -103,13 +103,13 @@ class RegisterRequest extends FormRequest
 
             'resume_url' => [
                 'exclude_if:role,employer',
-                'required_if:role,candidate',
+                'nullable',
                 'url',
             ],
 
             'phone_number' => [
                 'exclude_if:role,employer',
-                'required_if:role,candidate',
+                'nullable',
                 'string',
                 'max:20',
             ],
@@ -122,7 +122,7 @@ class RegisterRequest extends FormRequest
 
             'years_experience' => [
                 'exclude_if:role,employer',
-                'required_if:role,candidate',
+                'nullable',
                 'integer',
                 'min:0',
                 'max:50',
@@ -136,6 +136,7 @@ class RegisterRequest extends FormRequest
 
             'skills.*' => [
                 'exclude_if:role,employer',
+                'nullable',
                 'string',
                 'max:50',
             ],
